@@ -2,13 +2,11 @@ import streamlit as st
 import pandas as pd
 from datetime import time
 from get_stock_data import *
-from stock_cfg import *
-from plot import *
 
 
-@st.cache_data
-def get_option_prices(code, date):
-    ret, option_chain = quote_context.get_option_chain(code=code, start=date, end=date,
+@st.cache_data(ttl=5)
+def get_option_prices(code, start_date, end_date):
+    ret, option_chain = quote_context.get_option_chain(code=code, start=start_date, end=end_date,
                                                        option_type=OptionType.CALL)
     if ret != RET_OK:
         st.write('error:', options_expiration)
@@ -34,8 +32,8 @@ def get_option_prices(code, date):
         if ret != RET_OK:
             st.write('error:', data)
             st.stop()
-        bp = float(data['Bid'][0][0])
-        ap = float(data['Ask'][0][0])
+        bp = float(data['Bid'][0][0] if len(data['Bid']) != 0 else 0)
+        ap = float(data['Ask'][0][0] if len(data['Ask']) != 0 else 0)
         mp = ((bp if bp > 0 else ap) + (ap if ap > 0 else bp)) / 2
         sp = options_strike[index]
         if mp != 0:
@@ -54,12 +52,18 @@ if __name__ == '__main__':
                                 code_cfg.keys())
             ret, options_expiration = quote_context.get_option_expiration_date(code=code)
         with col2:
-            if ret != RET_OK:
-                st.write('error:', options_expiration)
-                st.stop()
-            dates = st.multiselect(
-                'Which expiration date would you like ?',
-                options_expiration)
+            st.button("Start")
+    if ret != RET_OK:
+        st.write('error:', options_expiration)
+        st.stop()
+    # dates = st.multiselect(
+    #     'Which expiration date would you like ?',
+    #     options_expiration)
+    strike_time_list = options_expiration['strike_time'].tolist()
+    start_date, end_date = st.select_slider(
+        'Select a range of expiration date:',
+        options=strike_time_list,
+        value=(strike_time_list[0], strike_time_list[1]))
 
     # 选择价格范围
     strike_price_range = st.slider(
@@ -67,8 +71,8 @@ if __name__ == '__main__':
 
     # 遍历dates
     option_price = pd.DataFrame()
-    for date in dates:
-        series = get_option_prices(code, date)
+    for date in [start_date, end_date]:
+        series = get_option_prices(code, date, date)
         option_price[date] = series
     st.line_chart(option_price)
 
@@ -79,3 +83,9 @@ if __name__ == '__main__':
         option_t.columns)
     option_t = option_t[stp]
     st.line_chart(option_t)
+
+    ret, data = quote_context.query_subscription()
+    if ret == RET_OK:
+        data
+    else:
+        print('error:', data)
