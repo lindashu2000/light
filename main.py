@@ -46,13 +46,19 @@ def get_option_prices(code, start_date, end_date):
 
 if __name__ == '__main__':
     with st.container():
-        col1, col2 = st.columns([2, 2])
+        col1, col2, col3 = st.columns([6, 2, 2])
         with col1:
             code = st.selectbox("Which stock would you like to see?",
                                 code_cfg.keys())
             ret, options_expiration = quote_context.get_option_expiration_date(code=code)
         with col2:
+            st.text(" ")
+            st.text(" ")
             st.button("Start")
+        with col3:
+            st.text(" ")
+            st.text(" ")
+            st.button("Stop")
     if ret != RET_OK:
         st.write('error:', options_expiration)
         st.stop()
@@ -69,23 +75,23 @@ if __name__ == '__main__':
     strike_price_range = st.slider(
         'Select a range of strike price', code_cfg[code][0], code_cfg[code][1], code_cfg[code][2])
 
-    # 遍历dates
-    option_price = pd.DataFrame()
-    for date in [start_date, end_date]:
-        series = get_option_prices(code, date, date)
-        option_price[date] = series
-    st.line_chart(option_price)
+    # # 遍历dates
+    # option_price = pd.DataFrame()
+    # for date in [start_date, end_date]:
+    #     series = get_option_prices(code, date, date)
+    #     option_price[date] = series
+    # st.line_chart(option_price)
+    #
+    # option_t = option_price.T
+    # # 遍历option_t的列名
+    # stp = st.multiselect(
+    #     'Select you strike prices',
+    #     option_t.columns)
+    # option_t = option_t[stp]
+    # st.line_chart(option_t)
 
-    option_t = option_price.T
-    # 遍历option_t的列名
-    stp = st.multiselect(
-        'Select you strike prices',
-        option_t.columns)
-    option_t = option_t[stp]
-    st.line_chart(option_t)
-
-    ret, data = quote_context.query_subscription()
-    if ret == RET_OK:
-        data
-    else:
-        print('error:', data)
+    # ret, data = quote_context.query_subscription()
+    # if ret == RET_OK:
+    #     data
+    # else:
+    #     print('error:', data)
